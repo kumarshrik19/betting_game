@@ -1,6 +1,8 @@
 import random
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
+from streamlit import rerun
 
 st.set_page_config(layout="wide")
 
@@ -24,23 +26,23 @@ def evaluate_coin_bets(outcome, bets):
         if counts["H"] == 3 or counts["T"] == 3:
             results["All three identical"] = odds["Coin Flip"]["All three identical"] * bets["All three identical"]
         else:
-            results["All three identical"] = -bets["All three identical"]
+            results["All three identical"] = 0 #-bets["All three identical"]
     if bets["More heads than tails"] > 0:
         if counts["H"] > counts["T"]:
             results["More heads than tails"] = odds["Coin Flip"]["More heads than tails"] * bets["More heads than tails"]
         else:
-            results["More heads than tails"] = -bets["More heads than tails"]
+            results["More heads than tails"] = 0 #-bets["More heads than tails"]
     if bets["More tails than heads"] > 0:
         if counts["T"] > counts["H"]:
             results["More tails than heads"] = odds["Coin Flip"]["More tails than heads"] * bets["More tails than heads"]
         else:
-            results["More tails than heads"] = -bets["More tails than heads"]
+            results["More tails than heads"] = 0 #-bets["More tails than heads"]
     if bets["Alternating (HTH or THT)"] > 0:
         pattern = "".join(outcome)
         if pattern in ["HTH", "THT"]:
             results["Alternating (HTH or THT)"] = odds["Coin Flip"]["Alternating (HTH or THT)"] * bets["Alternating (HTH or THT)"]
         else:
-            results["Alternating (HTH or THT)"] = -bets["Alternating (HTH or THT)"]
+            results["Alternating (HTH or THT)"] = 0 #-bets["Alternating (HTH or THT)"]
     return results
 
 def evaluate_dice_bets(total, bets):
@@ -49,20 +51,22 @@ def evaluate_dice_bets(total, bets):
         if amount == 0:
             continue
         success = False
-        if condition == "Even":
-            success = total % 2 == 0
-        elif condition == "Odd":
-            success = total % 2 == 1
-        elif "or" in condition:
-            options = [int(x) for x in condition.split(" or ")]
-            success = total in options
-        elif "-" in condition:
-            low, high = map(int, condition.split("-"))
-            success = low <= total <= high
-        else:
-            success = total == int(condition)
-
-        results[condition] = odds["Dice"][condition] * amount if success else -amount
+        try:
+            if condition == "Even":
+                success = total % 2 == 0
+            elif condition == "Odd":
+                success = total % 2 == 1
+            elif condition == "2 or 3":
+                success = total in [2,3]
+            elif condition == "6-7 or 8":
+                success = total in [6,7,8]
+            elif condition == "11 or 12":
+                success = total in [11,12]
+            else:
+                success = total == int(condition)
+            results[condition] = odds["Dice"][condition] * amount if success else 0
+        except Exception as e:
+            results[condition] = f"Error: {e}"
     return results
 
 def evaluate_card_bets(cards, bets):
@@ -72,30 +76,25 @@ def evaluate_card_bets(cards, bets):
         if amount == 0:
             continue
         success = False
-        if cond == "Even":
+        if cond == "Product is Even":
             success = prod % 2 == 0
-        elif cond == "Above 50":
+        elif cond == "Product > 50":
             success = prod > 50
-        elif cond == "Above 100":
+        elif cond == "Product > 100":
             success = prod > 100
         elif cond == "Product > 10":
             success = prod > 10
         elif cond == "Product < 40":
             success = prod < 40
-
-        results[cond] = odds["Cards"][cond] * amount if success else -amount
+        results[cond] = odds["Cards"][cond] * amount if success else 0
     return results
 
-# ---- UI Setup ----
-import matplotlib.pyplot as plt
-st.title("Betting Game")
 
-# ---- Odds Visualization ----
 true_probs = {
     "Coin Flip": {
         "All three identical": 0.25,
-        "More heads than tails": 0.375,
-        "More tails than heads": 0.375,
+        "More heads than tails": 0.5,
+        "More tails than heads": 0.5,
         "Alternating (HTH or THT)": 0.25,
     },
     "Dice": {
@@ -108,13 +107,62 @@ true_probs = {
         "Odd": 0.5,
     },
     "Cards": {
-        "Even": 0.5,
-        "Above 50": 0.4423,
-        "Above 100": 0.0897,
+        "Product is Even": 5/7,
+        "Product > 50": 0.4423,
+        "Product > 100": 0.0897,
         "Product > 10": 0.946,
         "Product < 40": 0.615,
     }
 }
+
+
+def noisy_odds(true_prob):
+    return round(1 / true_prob * random.uniform(0.9, 1.1), 2)
+
+def generate_odds():
+    return {
+        "Coin Flip": {
+            "All three identical": noisy_odds(true_probs["Coin Flip"]["All three identical"]),
+            "More heads than tails": noisy_odds(true_probs["Coin Flip"]["More heads than tails"]),
+            "More tails than heads": noisy_odds(true_probs["Coin Flip"]["More tails than heads"]),
+            "Alternating (HTH or THT)": noisy_odds(true_probs["Coin Flip"]["Alternating (HTH or THT)"]),
+        },
+        "Dice": {
+            "2 or 3": noisy_odds(true_probs["Dice"]["2 or 3"]),
+            "4": noisy_odds(true_probs["Dice"]["4"]),
+            "10": noisy_odds(true_probs["Dice"]["10"]),
+            "6-7 or 8": noisy_odds(true_probs["Dice"]["6-7 or 8"]),
+            "11 or 12": noisy_odds(true_probs["Dice"]["11 or 12"]),
+            "Even": noisy_odds(true_probs["Dice"]["Even"]),
+            "Odd": noisy_odds(true_probs["Dice"]["Odd"]),
+        },
+        "Cards": {
+            "Product is Even": noisy_odds(true_probs["Cards"]["Product is Even"]),
+            "Product > 50": noisy_odds(true_probs["Cards"]["Product > 50"]),
+            "Product > 100": noisy_odds(true_probs["Cards"]["Product > 100"]),
+            "Product > 10": noisy_odds(true_probs["Cards"]["Product > 10"]),
+            "Product < 40": noisy_odds(true_probs["Cards"]["Product < 40"]),
+        }
+    }
+
+# ---- Session State Initialization ----
+if "bankroll" not in st.session_state:
+    st.session_state.bankroll = 1000.0
+if "submitted" not in st.session_state:
+    st.session_state.submitted = False
+if "results" not in st.session_state:
+    st.session_state.results = None
+if "odds" not in st.session_state:
+    st.session_state.odds = generate_odds()
+if "clear_bets_flag" not in st.session_state:     
+    st.session_state.clear_bets_flag = False
+
+odds = st.session_state.odds
+
+#st.title("Betting Game")
+st.write(f"### Current Bankroll: ${st.session_state.bankroll:.2f}")
+
+# ---- Expected vs Offered Odds View ----
 
 if st.checkbox("Show Expected vs Offered Odds"):
     for category in true_probs:
@@ -124,125 +172,137 @@ if st.checkbox("Show Expected vs Offered Odds"):
             "Expected Odds (1/p)": [round(1 / p, 2) for p in true_probs[category].values()],
             "Offered Odds": [odds[category][k] for k in true_probs[category].keys()]
         })
-        df["Expected Value per $1 Bet"] = (df["Offered Odds"] * list(true_probs[category].values())) - 1
+        df["Expected Value per $1 Bet"] = df["Offered Odds"] * list(true_probs[category].values()) - 1
         st.dataframe(df)
 
-        fig, ax = plt.subplots()
-        ax.bar(df["Event"], df["Expected Odds (1/p)"], label="Expected", alpha=0.6)
-        ax.bar(df["Event"], df["Offered Odds"], label="Offered", alpha=0.6)
-        ax.set_ylabel("Odds")
-        ax.set_title("Expected vs Offered Odds")
-        ax.set_xticklabels(df["Event"], rotation=45, ha="right")
-        ax.legend()
-        st.pyplot(fig)
-
-bankroll = st.number_input("Bankroll", value=1000.0, step=10.0)
-
-# Odds are calculated from actual probabilities
-def noisy_odds(true_prob):
-    return round(1 / true_prob * random.uniform(0.9, 1.1), 2)
-
-true_probs = {
-    "Coin Flip": {
-        "All three identical": 0.25,
-        "More heads than tails": 0.375,
-        "More tails than heads": 0.375,
-        "Alternating (HTH or THT)": 0.25,
-    },
-    "Dice": {
-        "2 or 3": (1+2)/36,
-        "4": 3/36,
-        "10": 3/36,
-        "6-7 or 8": (5+6+5)/36,
-        "11 or 12": (2+1)/36,
-        "Even": 0.5,
-        "Odd": 0.5,
-    },
-    "Cards": {
-        "Even": 0.5,
-        "Above 50": 0.4423,
-        "Above 100": 0.0897,
-        "Product > 10": 0.946,
-        "Product < 40": 0.615,
-    }
-}
+        if False:
+            fig, ax = plt.subplots()
+            ax.bar(df["Event"], df["Expected Odds (1/p)"], label="Expected", alpha=0.6)
+            ax.bar(df["Event"], df["Offered Odds"], label="Offered", alpha=0.6)
+            ax.set_ylabel("Odds")
+            ax.set_title("Expected vs Offered Odds")
+            ax.set_xticklabels(df["Event"], rotation=45, ha="right")
+            ax.legend()
+            st.pyplot(fig)
 
 
-odds = {
-    "Coin Flip": {
-        "All three identical": noisy_odds(0.25),  # 2 outcomes: HHH, TTT out of 8 = 2/8 = 0.25
-        "More heads than tails": noisy_odds(0.375),     # HHH, HHT, HTH, THH = 3/8
-        "More tails than heads": noisy_odds(0.375),     # TTT, TTH, THT, HTT = 3/8
-        "Alternating (HTH or THT)": noisy_odds(0.25),   # HTH or THT = 2/8 = 0.25
-    },
-    "Dice": {
-        "2 or 3": noisy_odds((1+2)/36),             # 2: 1+1, 3: 1+2, 2+1
-        "4": noisy_odds(3/36),
-        "10": noisy_odds(3/36),
-        "6-7 or 8": noisy_odds((5+6+5)/36),           # 6:5, 7:6, 8:5
-        "11 or 12": noisy_odds((2+1)/36),
-        "Even": noisy_odds(0.5),
-        "Odd": noisy_odds(0.5),
-    },
-    "Cards": {
-        "Even": round(1 / 0.5, 2),
-        "Above 50": noisy_odds(0.4423),                 # approx P(X*Y > 50) for X,Y~Uniform(1,13)
-        "Above 100": noisy_odds(0.0897),                # approx P(X*Y > 100)
-        "Product > 10": noisy_odds(0.946),              # approx
-        "Product < 40": noisy_odds(0.615),              # approx
-    }
-}
+# ---- UI ----
 
-st.subheader("Coin Flip")
+def bet_input(label, key):
+    val = 0.0 if st.session_state.clear_bets_flag else st.session_state.get(key, 0.0)
+    return st.number_input(label, min_value=0.0, step=10.0, key=key, value=val)
+
+
+def safe_key(item):
+    return f"{item.replace(' ', '_').replace('(', '').replace(')', '').replace('>', 'gt').replace('<', 'lt').replace('-', '_').replace('or', '_or_')}"
+    
+#st.subheader("3 Coin Flip")
+st.markdown("<h3 style='color:#1f77b4;'>3 Coin Flip</h3>", unsafe_allow_html=True)
 coin_bets = {}
-for item in odds["Coin Flip"]:
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        st.write(f"{item} (Odds: {odds['Coin Flip'][item]})")
-    with col2:
-        coin_bets[item] = st.number_input(f"Bet - {item}", min_value=0.0, step=10.0, key=f"coin_{item}")
+coin_cols = st.columns(len(odds["Coin Flip"]))
+for idx, item in enumerate(odds["Coin Flip"]):
+    with coin_cols[idx]:
+        st.markdown(f"**{item}** <br>Odds: <b style='color:red'>{odds['Coin Flip'][item]}<b>", unsafe_allow_html=True)
+        coin_bets[item] = bet_input("", f"coin_{safe_key(item)}")
 
-st.subheader("Dice Roll")
+#st.subheader("Sum of two Dice Roll")
+st.markdown("<h3 style='color:#1f77b4;'>Sum of two Dice Roll</h3>", unsafe_allow_html=True)
 dice_bets = {}
-for item in odds["Dice"]:
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        st.write(f"{item} (Odds: {odds['Dice'][item]})")
-    with col2:
-        dice_bets[item] = st.number_input(f"Bet - {item}", min_value=0.0, step=10.0, key=f"dice_{item}")
+dice_cols = st.columns(len(odds["Dice"]))
+for idx, item in enumerate(odds["Dice"]):
+    with dice_cols[idx]:
+        st.markdown(f"**{item}** <br>Odds: <b style='color:red'>{odds['Dice'][item]}<b>", unsafe_allow_html=True)
+        dice_bets[item] = bet_input("", f"dice_{safe_key(item)}")
 
-st.subheader("Card Draw")
+#st.subheader("Product of two Card Draw")
+st.markdown("<h3 style='color:#1f77b4;'>Product of two Card Draw</h3>", unsafe_allow_html=True)
 card_bets = {}
-for item in odds["Cards"]:
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        st.write(f"{item} (Odds: {odds['Cards'][item]})")
-    with col2:
-        card_bets[item] = st.number_input(f"Bet - {item}", min_value=0.0, step=10.0, key=f"card_{item}")
+card_cols = st.columns(len(odds["Cards"]))
+for idx, item in enumerate(odds["Cards"]):
+    with card_cols[idx]:
+        st.markdown(f"**{item}** <br>Odds: <b style='color:red'>{odds['Cards'][item]}<b>", unsafe_allow_html=True)
+        card_bets[item] = bet_input("", f"card_{safe_key(item)}")
 
-if st.button("Submit Bets"):
-    total_bet = sum(coin_bets.values()) + sum(dice_bets.values()) + sum(card_bets.values())
-    if total_bet > bankroll:
-        st.error("You don't have enough bankroll to place these bets.")
-    else:
-        # Run outcomes
-        coins = get_outcome_coin_flip()
-        dice = get_outcome_dice_sum()
-        cards = get_outcome_card_draw()
 
-        st.write("### Outcomes")
-        st.write(f"Coin Flip: {' '.join(coins)}")
-        st.write(f"Dice Total: {dice}")
-        st.write(f"Cards: {cards[0]}, {cards[1]}, {cards[2]} (Product: {cards[0] * cards[1]})")
+if st.session_state.get("clear_bets_flag"):
+    st.session_state.clear_bets_flag = False
+    
+# ---- Buttons ----
 
-        coin_results = evaluate_coin_bets(coins, coin_bets)
-        dice_results = evaluate_dice_bets(dice, dice_bets)
-        card_results = evaluate_card_bets(cards, card_bets)
+button_cols = st.columns(2)
 
-        all_results = {**coin_results, **dice_results, **card_results}
-        total_payout = sum(all_results.values())
-        net_bankroll = bankroll - total_bet + total_payout
+with button_cols[0]:
+    if st.button("Submit Bets"):
+        bankroll = st.session_state.bankroll
+        total_bet = sum(coin_bets.values()) + sum(dice_bets.values()) + sum(card_bets.values())
+        if total_bet > bankroll:
+            st.error("You don't have enough bankroll to place these bets.")
+        else:
+            coins = get_outcome_coin_flip()
+            dice = get_outcome_dice_sum()
+            cards = get_outcome_card_draw()
 
-        st.write("### Results")
-        st.write(pd.DataFrame.from_dict(all_results, orient="index", columns=["Payout"]))
-        st.write(f"**Net Bankroll:** ${net_bankroll:.2f}")
+            #st.write("### Outcomes")
+            st.markdown("<h3 style='color:#1f77b4;'>Outcomes</h3>", unsafe_allow_html=True)
+            
+            st.write(f"Coin Flip: {' '.join(coins)}")
+            st.write(f"Dice Total: {dice}")
+            st.write(f"Cards: {cards[0]}, {cards[1]}, {cards[2]} (Product of first two: {cards[0] * cards[1]})")
+
+            coin_results = evaluate_coin_bets(coins, coin_bets)
+            dice_results = evaluate_dice_bets(dice, dice_bets)
+            card_results = evaluate_card_bets(cards, card_bets)
+
+            all_results = {**coin_results, **dice_results, **card_results}
+            total_payout = sum(all_results.values())
+            net_bankroll = st.session_state.bankroll - total_bet + total_payout
+
+            st.session_state.submitted = True
+            st.session_state.bankroll = net_bankroll
+            st.session_state.results = all_results
+            #st.write("### Results")
+            st.markdown("<h3 style='color:#1f77b4;'>Results</h3>", unsafe_allow_html=True)
+            st.markdown(f"<h4 style='color:#12ef10;'>New Bankroll: ${net_bankroll:.2f}</h4>", unsafe_allow_html=True)
+            #st.write(f"**New Bankroll:** ${net_bankroll:.2f}")
+
+            st.write(f"**Bets results:**\n")
+            # Group results by category
+            coin_results = {k: v for k, v in all_results.items() if k in odds["Coin Flip"]}
+            dice_results = {k: v for k, v in all_results.items() if k in odds["Dice"]}
+            card_results = {k: v for k, v in all_results.items() if k in odds["Cards"]}
+
+            def display_result_row(results_dict, label, max_cols=6):
+                st.markdown(f"**{label}**")
+                items = list(results_dict.items())
+                rows = (len(items) + max_cols - 1) // max_cols
+
+                for r in range(rows):
+                    cols = st.columns(max_cols)
+                    for i in range(max_cols):
+                        idx = r * max_cols + i
+                        if idx < len(items):
+                            event, payout = items[idx]
+                            with cols[i]:
+                                if (label == "Dice Roll"):
+                                    st.markdown(f"*Sum is {event}*  \n${payout:,.2f}")
+                                else:
+                                    st.markdown(f"*{event}*  \n${payout:,.2f}")
+                        else:
+                            with cols[i]:
+                                st.markdown("")  # Empty to preserve spacing
+                        
+            display_result_row(coin_results, "Coin Flip")
+            display_result_row(dice_results, "Dice Roll")
+            display_result_row(card_results, "Card Draw")
+
+
+with button_cols[1]:
+    if st.button("Clear Bets"):
+        for key in list(st.session_state.keys()):
+            if key.startswith("coin_") or key.startswith("dice_") or key.startswith("card_"):
+                del st.session_state[key]
+        st.session_state.submitted = False
+        st.session_state.results = None
+        st.session_state.odds = generate_odds()
+        st.session_state.clear_bets_flag = True
+        st.rerun()
