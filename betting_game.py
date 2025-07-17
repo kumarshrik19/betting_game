@@ -91,6 +91,31 @@ import matplotlib.pyplot as plt
 st.title("Betting Game")
 
 # ---- Odds Visualization ----
+true_probs = {
+    "Coin Flip": {
+        "All three identical": 0.25,
+        "More heads than tails": 0.375,
+        "More tails than heads": 0.375,
+        "Alternating (HTH or THT)": 0.25,
+    },
+    "Dice": {
+        "2 or 3": (1+2)/36,
+        "4": 3/36,
+        "10": 3/36,
+        "6-7 or 8": (5+6+5)/36,
+        "11 or 12": (2+1)/36,
+        "Even": 0.5,
+        "Odd": 0.5,
+    },
+    "Cards": {
+        "Even": 0.5,
+        "Above 50": 0.4423,
+        "Above 100": 0.0897,
+        "Product > 10": 0.946,
+        "Product < 40": 0.615,
+    }
+}
+
 if st.checkbox("Show Expected vs Offered Odds"):
     for category in true_probs:
         st.subheader(f"{category} Odds Comparison")
@@ -99,12 +124,14 @@ if st.checkbox("Show Expected vs Offered Odds"):
             "Expected Odds (1/p)": [round(1 / p, 2) for p in true_probs[category].values()],
             "Offered Odds": [odds[category][k] for k in true_probs[category].keys()]
         })
+                df["Expected Value per $1 Bet"] = (df["Offered Odds"] * list(true_probs[category].values())) - 1
         st.dataframe(df)
 
         fig, ax = plt.subplots()
         ax.bar(df["Event"], df["Expected Odds (1/p)"], label="Expected", alpha=0.6)
         ax.bar(df["Event"], df["Offered Odds"], label="Offered", alpha=0.6)
         ax.set_ylabel("Odds")
+        ax.set_title("Expected vs Offered Odds")
         ax.set_xticklabels(df["Event"], rotation=45, ha="right")
         ax.legend()
         st.pyplot(fig)
