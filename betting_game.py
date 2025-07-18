@@ -107,11 +107,11 @@ true_probs = {
         "Odd": 0.5,
     },
     "Cards": {
-        "Product is Even": 5/7,
-        "Product > 50": 0.4423,
-        "Product > 100": 0.0897,
-        "Product > 10": 0.946,
-        "Product < 40": 0.615,
+        "Product is Even": .715,
+        "Product > 50": 0.407,
+        "Product > 100": 0.1343,
+        "Product > 10": 0.841,
+        "Product < 40": 0.478,
     }
 }
 
