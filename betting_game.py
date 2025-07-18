@@ -276,7 +276,7 @@ with button_cols[0]:
             cards = st.session_state.cards
 
             #st.write("### Outcomes")
-            st.markdown("<h3 style='color:#1f77b4;'>Outcomes</h3>", unsafe_allow_html=True)
+            st.markdown("<h4 style='color:#1f77b4;'>Outcomes</h3>", unsafe_allow_html=True)
             
             st.write(f"Coin Flip: {' '.join(coins)}")
             st.write(f"Dice Total: {dice}")
@@ -297,11 +297,11 @@ with button_cols[0]:
             
             st.session_state.results = all_results
             #st.write("### Results")
-            st.markdown("<h3 style='color:#1f77b4;'>Results</h3>", unsafe_allow_html=True)
-            st.markdown(f"<h4 style='color:#12ef10;'>Bets: ${total_bet}, Payout: ${total_payout}, New Bankroll: ${st.session_state.bankroll:.2f}</h4>", unsafe_allow_html=True)
+            #st.markdown("<h3 style='color:#1f77b4;'>Results</h3>", unsafe_allow_html=True)
+            st.markdown(f"<h4 style='color:#12ef10;'>Results: Bets ${total_bet}, Payout ${total_payout}, New Bankroll ${st.session_state.bankroll:.2f}</h4>", unsafe_allow_html=True)
             #st.write(f"**New Bankroll:** ${net_bankroll:.2f}")
 
-            st.write(f"**Bets results:**\n")
+            #st.write(f"**Bets results:**\n")
             # Group results by category
             coin_results = {k: v for k, v in all_results.items() if k in odds["Coin Flip"]}
             dice_results = {k: v for k, v in all_results.items() if k in odds["Dice"]}
