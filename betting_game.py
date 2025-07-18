@@ -160,7 +160,12 @@ if "clear_bets_flag" not in st.session_state:
 odds = st.session_state.odds
 
 #st.title("Betting Game")
-st.write(f"### Current Bankroll: ${st.session_state.bankroll:.2f}")
+#st.write(f"### Current Bankroll: ${st.session_state.bankroll:.2f}")
+if st.session_state.submitted == True: 
+    st.write(f"### Current Bankroll: ${st.session_state.bankroll-st.session_state.last_win:.2f}, Win/Loss: {st.session_state.last_win:.2f}")
+else:
+    st.write(f"### Current Bankroll: ${st.session_state.bankroll:.2f}")
+        
 
 # ---- Expected vs Offered Odds View ----
 
@@ -197,7 +202,7 @@ def safe_key(item):
     return f"{item.replace(' ', '_').replace('(', '').replace(')', '').replace('>', 'gt').replace('<', 'lt').replace('-', '_').replace('or', '_or_')}"
     
 #st.subheader("3 Coin Flip")
-st.markdown("<h3 style='color:#1f77b4;'>3 Coin Flip</h3>", unsafe_allow_html=True)
+st.markdown("<h4 style='color:#1f77b4;'>3 Coin Flip</h3>", unsafe_allow_html=True)
 coin_bets = {}
 coin_cols = st.columns(len(odds["Coin Flip"]))
 for idx, item in enumerate(odds["Coin Flip"]):
@@ -206,7 +211,7 @@ for idx, item in enumerate(odds["Coin Flip"]):
         coin_bets[item] = bet_input("", f"coin_{safe_key(item)}")
 
 #st.subheader("Sum of two Dice Roll")
-st.markdown("<h3 style='color:#1f77b4;'>Sum of two Dice Roll</h3>", unsafe_allow_html=True)
+st.markdown("<h4 style='color:#1f77b4;'>Sum of two Dice Roll</h3>", unsafe_allow_html=True)
 dice_bets = {}
 dice_cols = st.columns(len(odds["Dice"]))
 for idx, item in enumerate(odds["Dice"]):
@@ -215,7 +220,7 @@ for idx, item in enumerate(odds["Dice"]):
         dice_bets[item] = bet_input("", f"dice_{safe_key(item)}")
 
 #st.subheader("Product of two Card Draw")
-st.markdown("<h3 style='color:#1f77b4;'>Product of two Card Draw</h3>", unsafe_allow_html=True)
+st.markdown("<h4 style='color:#1f77b4;'>Product of two Card Draw</h3>", unsafe_allow_html=True)
 card_bets = {}
 card_cols = st.columns(len(odds["Cards"]))
 for idx, item in enumerate(odds["Cards"]):
@@ -231,16 +236,44 @@ if st.session_state.get("clear_bets_flag"):
 
 button_cols = st.columns(2)
 
+
+with button_cols[1]:
+    if st.button("Clear Bets"):
+        for key in list(st.session_state.keys()):
+            if key.startswith("coin_") or key.startswith("dice_") or key.startswith("card_"):
+                del st.session_state[key]
+        st.session_state.submitted = False
+        st.session_state.results = None
+        st.session_state.odds = generate_odds()
+        st.session_state.clear_bets_flag = True
+        st.rerun()
+
+
 with button_cols[0]:
-    if st.button("Submit Bets"):
+    if st.button("Submit Bets") or st.session_state.submitted:
+        submit_pressed = not st.session_state.submitted
+
+        if submit_pressed: # generate new coins/dice/cards
+            st.session_state.coin_bets = coin_bets
+            st.session_state.dice_bets = dice_bets
+            st.session_state.card_bets = card_bets
+
+            st.session_state.coins = get_outcome_coin_flip()
+            st.session_state.dice = get_outcome_dice_sum()
+            st.session_state.cards = get_outcome_card_draw()
+        
+        coin_bets = st.session_state.coin_bets
+        dice_bets = st.session_state.dice_bets
+        card_bets = st.session_state.card_bets
+        
         bankroll = st.session_state.bankroll
         total_bet = sum(coin_bets.values()) + sum(dice_bets.values()) + sum(card_bets.values())
         if total_bet > bankroll:
             st.error("You don't have enough bankroll to place these bets.")
         else:
-            coins = get_outcome_coin_flip()
-            dice = get_outcome_dice_sum()
-            cards = get_outcome_card_draw()
+            coins = st.session_state.coins
+            dice = st.session_state.dice
+            cards = st.session_state.cards
 
             #st.write("### Outcomes")
             st.markdown("<h3 style='color:#1f77b4;'>Outcomes</h3>", unsafe_allow_html=True)
@@ -255,14 +288,17 @@ with button_cols[0]:
 
             all_results = {**coin_results, **dice_results, **card_results}
             total_payout = sum(all_results.values())
-            net_bankroll = st.session_state.bankroll - total_bet + total_payout
-
-            st.session_state.submitted = True
-            st.session_state.bankroll = net_bankroll
+            
+            if submit_pressed:  # update bankroll and states
+                net_bankroll = st.session_state.bankroll - total_bet + total_payout
+                st.session_state.submitted = True
+                st.session_state.bankroll = net_bankroll
+                st.session_state.last_win = total_payout - total_bet
+            
             st.session_state.results = all_results
             #st.write("### Results")
             st.markdown("<h3 style='color:#1f77b4;'>Results</h3>", unsafe_allow_html=True)
-            st.markdown(f"<h4 style='color:#12ef10;'>New Bankroll: ${net_bankroll:.2f}</h4>", unsafe_allow_html=True)
+            st.markdown(f"<h4 style='color:#12ef10;'>Bets: ${total_bet}, Payout: ${total_payout}, New Bankroll: ${st.session_state.bankroll:.2f}</h4>", unsafe_allow_html=True)
             #st.write(f"**New Bankroll:** ${net_bankroll:.2f}")
 
             st.write(f"**Bets results:**\n")
@@ -271,7 +307,7 @@ with button_cols[0]:
             dice_results = {k: v for k, v in all_results.items() if k in odds["Dice"]}
             card_results = {k: v for k, v in all_results.items() if k in odds["Cards"]}
 
-            def display_result_row(results_dict, label, max_cols=6):
+            def display_result_row(results_dict, bets, label, max_cols=4):
                 st.markdown(f"**{label}**")
                 items = list(results_dict.items())
                 rows = (len(items) + max_cols - 1) // max_cols
@@ -282,27 +318,20 @@ with button_cols[0]:
                         idx = r * max_cols + i
                         if idx < len(items):
                             event, payout = items[idx]
+                            bet = bets[event]
                             with cols[i]:
                                 if (label == "Dice Roll"):
-                                    st.markdown(f"*Sum is {event}*  \n${payout:,.2f}")
+                                    st.markdown(f"*Sum is {event}*, bet: {bet:.2f} $ payout: {payout:,.2f}")
                                 else:
-                                    st.markdown(f"*{event}*  \n${payout:,.2f}")
+                                    st.markdown(f"*{event}*, bet: {bet:.2f}, $ payout: {payout:,.2f}")
                         else:
                             with cols[i]:
                                 st.markdown("")  # Empty to preserve spacing
                         
-            display_result_row(coin_results, "Coin Flip")
-            display_result_row(dice_results, "Dice Roll")
-            display_result_row(card_results, "Card Draw")
+            display_result_row(coin_results, coin_bets, "Coin Flip")
+            display_result_row(dice_results, dice_bets, "Dice Roll")
+            display_result_row(card_results, card_bets, "Card Draw")
+            if submit_pressed:
+                st.rerun()
 
 
-with button_cols[1]:
-    if st.button("Clear Bets"):
-        for key in list(st.session_state.keys()):
-            if key.startswith("coin_") or key.startswith("dice_") or key.startswith("card_"):
-                del st.session_state[key]
-        st.session_state.submitted = False
-        st.session_state.results = None
-        st.session_state.odds = generate_odds()
-        st.session_state.clear_bets_flag = True
-        st.rerun()
