@@ -298,7 +298,7 @@ with button_cols[0]:
             st.session_state.results = all_results
             #st.write("### Results")
             #st.markdown("<h3 style='color:#1f77b4;'>Results</h3>", unsafe_allow_html=True)
-            st.markdown(f"<h4 style='color:#06402B;'>Results: Bets ${total_bet}, Payout ${total_payout}, New Bankroll ${st.session_state.bankroll:.2f}</h4>", unsafe_allow_html=True)
+            st.markdown(f"<h4 style='color:#06a02B;'>Results: Bets ${total_bet}, Payout ${total_payout}, New Bankroll ${st.session_state.bankroll:.2f}</h4>", unsafe_allow_html=True)
             #st.write(f"**New Bankroll:** ${net_bankroll:.2f}")
 
             #st.write(f"**Bets results:**\n")
