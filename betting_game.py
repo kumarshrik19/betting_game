@@ -6,6 +6,20 @@ from streamlit import rerun
 
 st.set_page_config(layout="wide")
 
+# ---- Password Gate ----
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+
+if not st.session_state.authenticated:
+    st.title("🔐 Password Required")
+    password = st.text_input("Enter password to access the app", type="password")
+    if password == "SecretGame0261":
+        st.session_state.authenticated = True
+        st.rerun()
+    elif password:
+        st.error("Incorrect password. Try again.")
+    st.stop()
+
 # ---- Helper Functions ----
 def get_outcome_coin_flip():
     return [random.choice(["H", "T"]) for _ in range(3)]
