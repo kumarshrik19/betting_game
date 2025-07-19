@@ -40,23 +40,23 @@ def evaluate_coin_bets(outcome, bets):
         if counts["H"] == 3 or counts["T"] == 3:
             results["All three identical"] = odds["Coin Flip"]["All three identical"] * bets["All three identical"]
         else:
-            results["All three identical"] = 0 #-bets["All three identical"]
+            results["All three identical"] = -bets["All three identical"]
     if bets["More heads than tails"] > 0:
         if counts["H"] > counts["T"]:
             results["More heads than tails"] = odds["Coin Flip"]["More heads than tails"] * bets["More heads than tails"]
         else:
-            results["More heads than tails"] = 0 #-bets["More heads than tails"]
+            results["More heads than tails"] = -bets["More heads than tails"]
     if bets["More tails than heads"] > 0:
         if counts["T"] > counts["H"]:
             results["More tails than heads"] = odds["Coin Flip"]["More tails than heads"] * bets["More tails than heads"]
         else:
-            results["More tails than heads"] = 0 #-bets["More tails than heads"]
+            results["More tails than heads"] = -bets["More tails than heads"]
     if bets["Alternating (HTH or THT)"] > 0:
         pattern = "".join(outcome)
         if pattern in ["HTH", "THT"]:
             results["Alternating (HTH or THT)"] = odds["Coin Flip"]["Alternating (HTH or THT)"] * bets["Alternating (HTH or THT)"]
         else:
-            results["Alternating (HTH or THT)"] = 0 #-bets["Alternating (HTH or THT)"]
+            results["Alternating (HTH or THT)"] = -bets["Alternating (HTH or THT)"]
     return results
 
 def evaluate_dice_bets(total, bets):
@@ -78,7 +78,7 @@ def evaluate_dice_bets(total, bets):
                 success = total in [11,12]
             else:
                 success = total == int(condition)
-            results[condition] = odds["Dice"][condition] * amount if success else 0
+            results[condition] = odds["Dice"][condition] * amount if success else -amount
         except Exception as e:
             results[condition] = f"Error: {e}"
     return results
@@ -100,7 +100,7 @@ def evaluate_card_bets(cards, bets):
             success = prod > 10
         elif cond == "Product < 40":
             success = prod < 40
-        results[cond] = odds["Cards"][cond] * amount if success else 0
+        results[cond] = odds["Cards"][cond] * amount if success else -amount
     return results
 
 
@@ -131,7 +131,7 @@ true_probs = {
 
 
 def noisy_odds(true_prob):
-    return round(1 / true_prob * random.uniform(0.9, 1.1), 2)
+    return round(1 / true_prob * random.uniform(0.9, 1.1) - 1, 2)
 
 def generate_odds():
     return {
@@ -304,15 +304,15 @@ with button_cols[0]:
             total_payout = sum(all_results.values())
             
             if submit_pressed:  # update bankroll and states
-                net_bankroll = st.session_state.bankroll - total_bet + total_payout
+                net_bankroll = st.session_state.bankroll + total_payout
                 st.session_state.submitted = True
                 st.session_state.bankroll = net_bankroll
-                st.session_state.last_win = total_payout - total_bet
+                st.session_state.last_win = total_payout
             
             st.session_state.results = all_results
             #st.write("### Results")
             #st.markdown("<h3 style='color:#1f77b4;'>Results</h3>", unsafe_allow_html=True)
-            st.markdown(f"<h4 style='color:#06a02B;'>Results: Bets ${total_bet}, Payout ${total_payout}, New Bankroll ${st.session_state.bankroll:.2f}</h4>", unsafe_allow_html=True)
+            st.markdown(f"<h4 style='color:#06a02B;'>Results: Bets ${total_bet}, Win/Loss ${total_payout}, New Bankroll ${st.session_state.bankroll:.2f}</h4>", unsafe_allow_html=True)
             #st.write(f"**New Bankroll:** ${net_bankroll:.2f}")
 
             #st.write(f"**Bets results:**\n")
