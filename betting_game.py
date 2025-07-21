@@ -130,7 +130,7 @@ true_probs = {
 }
 
 def noisy_odds(true_prob):
-    return round((1 / true_prob - 1) * random.uniform(0.9, 1.10), 2)
+    return round((1 / true_prob - 1) * random.uniform(0.9, 1.20, 2)
 
 def noisy_odds2(true_prob):
     return round((1 / true_prob - 1) * random.uniform(0.87, 1.07), 2)
