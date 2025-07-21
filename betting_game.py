@@ -129,16 +129,18 @@ true_probs = {
     }
 }
 
-
 def noisy_odds(true_prob):
     return round(1 / true_prob * random.uniform(0.9, 1.1) - 1, 2)
+
+def noisy_odds2(true_prob):
+    return round(1 / true_prob * random.uniform(0.85, 1.05) - 1, 2)
 
 def generate_odds():
     return {
         "Coin Flip": {
             "All three identical": noisy_odds(true_probs["Coin Flip"]["All three identical"]),
-            "More heads than tails": noisy_odds(true_probs["Coin Flip"]["More heads than tails"]),
-            "More tails than heads": noisy_odds(true_probs["Coin Flip"]["More tails than heads"]),
+            "More heads than tails": noisy_odds2(true_probs["Coin Flip"]["More heads than tails"]),
+            "More tails than heads": noisy_odds2(true_probs["Coin Flip"]["More tails than heads"]),
             "Alternating (HTH or THT)": noisy_odds(true_probs["Coin Flip"]["Alternating (HTH or THT)"]),
         },
         "Dice": {
@@ -147,8 +149,8 @@ def generate_odds():
             "10": noisy_odds(true_probs["Dice"]["10"]),
             "6-7 or 8": noisy_odds(true_probs["Dice"]["6-7 or 8"]),
             "11 or 12": noisy_odds(true_probs["Dice"]["11 or 12"]),
-            "Even": noisy_odds(true_probs["Dice"]["Even"]),
-            "Odd": noisy_odds(true_probs["Dice"]["Odd"]),
+            "Even": noisy_odds2(true_probs["Dice"]["Even"]),
+            "Odd": noisy_odds2(true_probs["Dice"]["Odd"]),
         },
         "Cards": {
             "Product is Even": noisy_odds(true_probs["Cards"]["Product is Even"]),
