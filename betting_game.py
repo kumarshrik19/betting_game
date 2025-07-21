@@ -178,9 +178,9 @@ odds = st.session_state.odds
 #st.title("Betting Game")
 #st.write(f"### Current Bankroll: ${st.session_state.bankroll:.2f}")
 if st.session_state.submitted == True: 
-    st.write(f"### v2 Current Bankroll: ${st.session_state.bankroll-st.session_state.last_win:.2f}, Win/Loss: {st.session_state.last_win:.2f}")
+    st.write(f"### Current Bankroll: ${st.session_state.bankroll-st.session_state.last_win:.2f}, Win/Loss: {st.session_state.last_win:.2f}")
 else:
-    st.write(f"### v2 Current Bankroll: ${st.session_state.bankroll:.2f}")
+    st.write(f"### v3 Current Bankroll: ${st.session_state.bankroll:.2f}")
         
 
 # ---- Expected vs Offered Odds View ----
