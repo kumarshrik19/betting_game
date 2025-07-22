@@ -193,7 +193,7 @@ if st.checkbox("Show Expected vs Offered Odds"):
             "Expected Odds (1/p)-1": [round(1 / p-1, 2) for p in true_probs[category].values()],
             "Offered Odds": [odds[category][k] for k in true_probs[category].keys()]
         })
-        df["Expected Value per $1 Bet"] = (1+df["Offered Odds"]) * list(true_probs[category].values()) -1 
+        df["Expected Value per $1 Bet"] = (df["Offered Odds"]) * list(true_probs[category].values()) -1 
         st.dataframe(df)
 
         if False:
